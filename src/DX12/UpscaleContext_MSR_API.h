@@ -12,12 +12,30 @@
 
 using namespace CAULDRON_DX12;
 
+struct MSRRootConstants {
+	float jitter[2];
+	uint32_t renderSize[2];
+	uint32_t displaySize[2];
+	float upscaleFactor;
+};
+
 constexpr size_t MSR_ROOT_PARAM_COUNT = 10;
+constexpr size_t MSR_MAX_STATIC_SAMPLERS = 2;
 
 enum MSR_PASS {
 	MSR_PASS_ACCUMULATE_AND_UPSCALE = 0,
 
 	MSR_PASS_COUNT
+};
+
+enum MSR_DESCRIPTOR_HEAP_INDEX {
+	MSR_DESCRIPTOR_HEAP_SRV_START = 0,
+	MSR_DESCRIPTOR_HEAP_SRV_COUNT = 10,
+
+	MSR_DESCRIPTOR_HEAP_UAV_START = MSR_DESCRIPTOR_HEAP_SRV_START + MSR_DESCRIPTOR_HEAP_SRV_COUNT,
+	MSR_DESCRIPTOR_HEAP_UAV_COUNT = 10,
+
+	MSR_DESCRIPTOR_HEAP_SIZE = MSR_DESCRIPTOR_HEAP_SRV_COUNT + MSR_DESCRIPTOR_HEAP_UAV_COUNT
 };
 
 class UpscaleContext_MSR_API : public UpscaleContext
@@ -47,6 +65,7 @@ private:
 	ID3D12PipelineState* m_pipelineStates[MSR_PASS_COUNT];
 	ID3D12DescriptorHeap* m_UAV_SRV_CBV_Heap;
 	ID3D12RootSignature* m_rootSignature;
+	MSRRootConstants m_rootConstants;
 
 	float memoryUsageInMegabytes = 0;
 };
