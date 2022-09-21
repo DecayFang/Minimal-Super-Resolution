@@ -37,6 +37,7 @@ typedef enum UpscaleType {
     UPSCALE_TYPE_FSR_1_0 = 3,
     UPSCALE_TYPE_FSR_2_0 = 4,
     UPSCALE_TYPE_NATIVE = 5,
+	UPSCALE_TYPE_MSR = 6,
 
     // add above this.
     UPSCALE_TYPE_COUNT
@@ -109,7 +110,7 @@ struct UIState
     bool    bVsyncOn = true;
 
     // NOTE: These should always match the values in m_SavedUiValues for m_nUpscaleType.
-    UpscaleType  m_nUpscaleType = UPSCALE_TYPE_FSR_2_0;
+    UpscaleType  m_nUpscaleType = UPSCALE_TYPE_MSR;
     float   mipBias = -1.58f;
     bool    bUseRcas = false;
     bool    bUseTAA = true;

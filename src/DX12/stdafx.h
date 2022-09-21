@@ -36,6 +36,7 @@
 #include <mutex>
 #include <vector>
 #include <fstream>
+#include <iostream>
 
 #include "../../libs/d3d12x/d3dx12.h"
 

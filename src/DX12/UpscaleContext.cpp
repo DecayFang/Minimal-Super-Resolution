@@ -23,6 +23,7 @@
 #include "UpscaleContext.h"
 #include "UpscaleContext_Spatial.h"
 #include "UpscaleContext_FSR2_API.h"
+#include "UpscaleContext_MSR_API.h"
 
 #include "../ffx-fsr2-api/ffx_fsr2.h"
 
@@ -44,6 +45,8 @@ UpscaleContext* UpscaleContext::CreateUpscaleContext(const FfxUpscaleInitParams&
     case UPSCALE_TYPE_FSR_2_0:
         pContext = new UpscaleContext_FSR2_API(initParams.nType, "FSR2 API");
         break;
+	case UPSCALE_TYPE_MSR:
+		pContext = new UpscaleContext_MSR_API(initParams.nType, "Minimal Supersampling Resolution API");
     // Additional options:
     //		MSAA, MSAA resolve to higher resolution, then add TAA?
     //		Checkerboard?

@@ -170,7 +170,7 @@ void FSR2Sample::BuildUI()
         ImGui::Spacing();
         if (ImGui::CollapsingHeader("Upscaling ", ImGuiTreeNodeFlags_DefaultOpen)) //blank space needed, otherwise the identically named 'combo' drop down below won't work
         {
-            const char* modes[] = { "Point [Ctrl-1]", "Bilinear [Ctrl-2]", "Bicubic [Ctrl-3]", "FSR 1.0 [Ctrl-4]", "FSR 2.0 [Ctrl-5]", "Native [Ctrl-0]" };
+            const char* modes[] = { "Point [Ctrl-1]", "Bilinear [Ctrl-2]", "Bicubic [Ctrl-3]", "FSR 1.0 [Ctrl-4]", "FSR 2.0 [Ctrl-5]", "Native [Ctrl-0]", "MSR"};
             if (ImGui::Combo("Upscaling", (int32_t*)&m_UIState.m_nUpscaleType, modes, _countof(modes)))
             {
                 if (m_UIState.m_nUpscaleType == UPSCALE_TYPE_NATIVE)

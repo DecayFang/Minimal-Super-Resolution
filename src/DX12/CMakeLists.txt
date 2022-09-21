@@ -24,6 +24,8 @@ set(sources
     UpscaleContext.h
     UpscaleContext_Spatial.cpp
     UpscaleContext_Spatial.h
+    UpscaleContext_MSR_API.cpp
+    UpscaleContext_MSR_API.h
     UpscaleContext_FSR2_API.cpp
     UpscaleContext_FSR2_API.h
     GPUFrameRateLimiter.cpp

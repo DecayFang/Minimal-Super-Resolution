@@ -21,6 +21,9 @@
 
 #include "stdafx.h"
 #include <intrin.h>
+#include <iostream>
+#include <shlobj.h>
+#include <strsafe.h>
 
 #include "FSR2Sample.h"
 
@@ -763,6 +766,50 @@ void FSR2Sample::OnRender()
     EndFrame();
 }
 
+static std::wstring GetLatestWinPixGpuCapturerPath()
+{
+	LPWSTR programFilesPath = nullptr;
+	SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, NULL, &programFilesPath);
+
+	std::wstring pixSearchPath = programFilesPath + std::wstring(L"\\Microsoft PIX\\*");
+
+	WIN32_FIND_DATAW findData;
+	bool foundPixInstallation = false;
+	wchar_t newestVersionFound[MAX_PATH];
+
+	HANDLE hFind = FindFirstFileW(pixSearchPath.c_str(), &findData);
+	if (hFind != INVALID_HANDLE_VALUE)
+	{
+		do
+		{
+			if (((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) &&
+				(findData.cFileName[0] != '.'))
+			{
+				if (!foundPixInstallation || wcscmp(newestVersionFound, findData.cFileName) <= 0)
+				{
+					foundPixInstallation = true;
+					StringCchCopyW(newestVersionFound, _countof(newestVersionFound), findData.cFileName);
+				}
+			}
+		} while (FindNextFileW(hFind, &findData) != 0);
+	}
+
+	FindClose(hFind);
+
+	if (!foundPixInstallation)
+	{
+		std::cerr << "Error: cannot find WinPixGpuCapturer.dll" << std::endl;
+		exit(-1);
+	}
+
+	wchar_t output[MAX_PATH];
+	StringCchCopyW(output, pixSearchPath.length(), pixSearchPath.data());
+	StringCchCatW(output, MAX_PATH, &newestVersionFound[0]);
+	StringCchCatW(output, MAX_PATH, L"\\WinPixGpuCapturer.dll");
+
+	return &output[0];
+}
+
 
 //--------------------------------------------------------------------------------------
 //
@@ -774,6 +821,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
     LPSTR lpCmdLine,
     int nCmdShow)
 {
+	// for PIX graphics analyzer
+	if (GetModuleHandleW(L"WinPixGpuCapturer.dll") == 0)
+	{
+		LoadLibraryW(GetLatestWinPixGpuCapturerPath().c_str());
+	}
+
     LPCSTR Name = "FidelityFX Super Resolution 2.1";
 
     // create new DX sample

@@ -1,6 +1,6 @@
 [submodule "media/cauldron-media"]
 	path = media/cauldron-media
-	url = ../../GPUOpen-LibrariesAndSDKs/Cauldron-Media.git
+	url = git@github.com:DecayFang/Cauldron-Media.git
 [submodule "libs/cauldron"]
 	path = libs/cauldron
-	url = ../../GPUOpen-LibrariesAndSDKs/Cauldron.git
+	url = git@github.com:DecayFang/Cauldron.git
