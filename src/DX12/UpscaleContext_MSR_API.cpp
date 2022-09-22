@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <d3dx12.h>
 #include <algorithm>
 #include "UpscaleContext_MSR_API.h"
 
@@ -135,6 +136,29 @@ void UpscaleContext_MSR_API::OnDestroy()
 void UpscaleContext_MSR_API::OnCreateWindowSizeDependentResources(ID3D12Resource* input, ID3D12Resource* output, uint32_t renderWidth, uint32_t renderHeight, uint32_t displayWidth, uint32_t displayHeight, bool hdr)
 {
 	UpscaleContext::OnCreateWindowSizeDependentResources(input, output, renderWidth, renderHeight, displayWidth, displayHeight, hdr);
+	ID3D12Device* d3dDevice = m_pDevice->GetDevice();
+
+	ID3D12Resource* resource;
+	D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R16G16B16A16_FLOAT, displayWidth, displayHeight);
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	ThrowIfFailed(d3dDevice->CreateCommittedResource(
+		&heapProperties, 
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		nullptr,
+		IID_PPV_ARGS(&resource)
+	));
+
+	// create UAV and SRV for the resource
+	size_t heapIncrementSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	auto srvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_UAV_SRV_CBV_Heap->GetCPUDescriptorHandleForHeapStart(), MSR_RESOURCE_VIEW_INTERNEL_COLOR_READ, heapIncrementSize);
+	d3dDevice->CreateShaderResourceView(resource, nullptr, srvHandle);
+
+	auto uavHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_UAV_SRV_CBV_Heap->GetCPUDescriptorHandleForHeapStart(), MSR_RESOURCE_VIEW_INTERNEL_COLOR_WRITE, heapIncrementSize);
+	d3dDevice->CreateUnorderedAccessView(resource, nullptr, nullptr, uavHandle);
 }
 
 void UpscaleContext_MSR_API::OnDestroyWindowSizeDependentResources()
@@ -167,7 +191,6 @@ void UpscaleContext_MSR_API::Draw(ID3D12GraphicsCommandList* pCommandList, const
 	m_rootConstants.displaySize[0] = pState->displayWidth;
 	m_rootConstants.displaySize[1] = pState->displayHeight;
 	
-
 	ID3D12DescriptorHeap* descHeaps[] = { m_UAV_SRV_CBV_Heap };
 	pCommandList->SetDescriptorHeaps(_countof(descHeaps), descHeaps);
 
@@ -177,11 +200,11 @@ void UpscaleContext_MSR_API::Draw(ID3D12GraphicsCommandList* pCommandList, const
 
 	size_t heapIncrementSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	{
-		auto uavHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_UAV_SRV_CBV_Heap->GetCPUDescriptorHandleForHeapStart(), MSR_DESCRIPTOR_HEAP_UAV_START + 0, heapIncrementSize);
+		auto uavHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_UAV_SRV_CBV_Heap->GetCPUDescriptorHandleForHeapStart(), MSR_RESOURCE_VIEW_OUTPUT_COLOR, heapIncrementSize);
 		d3dDevice->CreateUnorderedAccessView(output, nullptr, nullptr, uavHandle);
 	}
 	{
-		auto srvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_UAV_SRV_CBV_Heap->GetCPUDescriptorHandleForHeapStart(), MSR_DESCRIPTOR_HEAP_SRV_START + 0, heapIncrementSize);
+		auto srvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_UAV_SRV_CBV_Heap->GetCPUDescriptorHandleForHeapStart(), MSR_RESOURCE_VIEW_INPUT_COLOR, heapIncrementSize);
 		d3dDevice->CreateShaderResourceView(inputColor, nullptr, srvHandle);
 	}
 	{
@@ -190,11 +213,11 @@ void UpscaleContext_MSR_API::Draw(ID3D12GraphicsCommandList* pCommandList, const
 		desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		desc.Texture2D.MipLevels = inputDepth->GetDesc().MipLevels;
-		auto srvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_UAV_SRV_CBV_Heap->GetCPUDescriptorHandleForHeapStart(), MSR_DESCRIPTOR_HEAP_SRV_START + 1, heapIncrementSize);
+		auto srvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_UAV_SRV_CBV_Heap->GetCPUDescriptorHandleForHeapStart(), MSR_RESOURCE_VIEW_INPUT_DEPTH, heapIncrementSize);
 		d3dDevice->CreateShaderResourceView(inputDepth, &desc, srvHandle);
 	}
 	{
-		auto srvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_UAV_SRV_CBV_Heap->GetCPUDescriptorHandleForHeapStart(), MSR_DESCRIPTOR_HEAP_SRV_START + 2, heapIncrementSize);
+		auto srvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_UAV_SRV_CBV_Heap->GetCPUDescriptorHandleForHeapStart(), MSR_RESOURCE_VIEW_INPUT_MOTION, heapIncrementSize);
 		d3dDevice->CreateShaderResourceView(inputMotion, nullptr, srvHandle);
 	}
 
@@ -206,7 +229,7 @@ void UpscaleContext_MSR_API::Draw(ID3D12GraphicsCommandList* pCommandList, const
 	pCommandList->SetComputeRoot32BitConstants(2, sizeof(MSRRootConstants) / 4, reinterpret_cast<void*>(&m_rootConstants), 0);
 
 	//// Dispatch command
-	pCommandList->Dispatch(240, 135, 1);
+	pCommandList->Dispatch((pState->displayWidth + 7) / 8, (pState->displayHeight + 7) / 8, 1);
 }
 
 void UpscaleContext_MSR_API::ReloadPipelines()
