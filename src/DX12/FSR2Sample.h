@@ -59,6 +59,7 @@ public:
 
     void HandleInput(const ImGuiIO& io);
     void UpdateCamera(Camera& cam, const ImGuiIO& io);
+	void UpdateCamera_autoYaw(Camera& cam, const ImGuiIO& io);
 
 private:
     bool                        m_bIsBenchmarking;

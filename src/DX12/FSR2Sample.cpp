@@ -483,6 +483,7 @@ void FSR2Sample::OnUpdate()
     }
 
     // Update Camera
+	//UpdateCamera_autoYaw(m_UIState.camera, io);
     UpdateCamera(m_UIState.camera, io);
 
     // Keyboard & Mouse
@@ -688,6 +689,18 @@ void FSR2Sample::UpdateCamera(Camera& cam, const ImGuiIO& io)
         // Use a camera from the GLTF
         m_pGltfLoader->GetCamera(m_activeCamera - 2, &cam);
     }
+}
+
+void FSR2Sample::UpdateCamera_autoYaw(Camera& cam, const ImGuiIO& io)
+{
+	constexpr float autoYawSpeed = 6.f;
+	cam.UpdatePreviousMatrices(); // set previous view matrix
+
+	float pitch = cam.GetPitch();
+	float yaw = cam.GetYaw();
+	yaw += io.DeltaTime * autoYawSpeed;
+	math::Vector4 dir = PolarToVector(yaw, pitch) * cam.GetDistance();
+	cam.LookAt(cam.GetPosition(), cam.GetPosition() - dir);
 }
 
 //--------------------------------------------------------------------------------------
